@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GitHubDork</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1113; --panel:#16191c; --panel2:#1c2024; --line:#2a2f34;
+  --text:#e7e6e2; --muted:#8b9198; --amber:#d68c3a; --amber-dim:#8a5a26;
+  --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;min-height:100%}
+.wrap{max-width:1000px;margin:0 auto;padding:28px 20px 60px}
+header{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:24px}
+header h1{font-size:1.7rem;margin:0 0 6px;font-weight:700;letter-spacing:-.01em}
+header p{color:var(--muted);margin:0 0 4px;font-size:.92rem}
+header a{color:var(--amber);text-decoration:none;border-bottom:1px dotted var(--amber-dim)}
+header a:hover{border-bottom-style:solid}
+
+.field{margin-bottom:16px}
+.field label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:6px}
+.field input{
+  width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);
+  padding:11px 14px;border-radius:6px;font-family:var(--mono);font-size:.95rem;
+}
+.field input:focus{outline:none;border-color:var(--amber-dim)}
+
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin:20px 0 24px}
+.cat{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;user-select:none}
+.cat input{accent-color:var(--amber)}
+.cat.active{border-color:var(--amber-dim);background:#20180f}
+
+.actions{display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap}
+button.primary{background:var(--amber);color:#141414;border:none;padding:11px 20px;border-radius:6px;font-family:var(--sans);font-weight:600;font-size:.9rem;cursor:pointer}
+button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);padding:11px 16px;border-radius:6px;font-family:var(--sans);font-size:.85rem;cursor:pointer}
+button.ghost:hover{color:var(--text);border-color:var(--muted)}
+
+.group{margin-bottom:22px}
+.group h2{font-size:.82rem;color:var(--amber);margin:0 0 10px;font-weight:600;border-left:2px solid var(--amber-dim);padding-left:10px}
+.dork-row{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:9px 12px;margin-bottom:6px;flex-wrap:wrap}
+.dork-row code{flex:1;min-width:200px;font-family:var(--mono);font-size:.82rem;color:#cfd6dc;overflow-x:auto;white-space:pre;padding:2px 0}
+.dork-row code::-webkit-scrollbar{height:4px}
+.row-btns{display:flex;gap:6px;flex-shrink:0}
+.linkbtn,.copybtn{
+  flex-shrink:0;background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+  font-size:.74rem;padding:6px 10px;border-radius:5px;cursor:pointer;font-family:var(--sans);
+  text-decoration:none;display:inline-block;
+}
+.linkbtn.google{color:#8ab4f8;border-color:#2a3a4a}
+.linkbtn.github{color:#d1d5da;border-color:#3a3a3a}
+.linkbtn.sg{color:#a78bfa;border-color:#3a2f52}
+.linkbtn:hover{filter:brightness(1.3)}
+.copybtn:hover{color:var(--amber);border-color:var(--amber-dim)}
+.copybtn.done{color:#7cc98a;border-color:#3a5a3f}
+
+.empty{color:var(--muted);font-size:.9rem;padding:30px 0;text-align:center}
+footer{color:var(--muted);font-size:.78rem;margin-top:30px;border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--amber)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>DorkHelper</h1>
+    <p>Generate ready-to-run dorks for a target domain/org. Every row links straight to <b>GitHub Code Search</b> and <b>Sourcegraph</b> — click to run it.</p>
+    <p>Sourcegraph search reference: <a href="https://sourcegraph.com/search" target="_blank" rel="noopener">sourcegraph.com/search</a></p>
+  </header>
+
+  <div class="field">
+    <label>Target domain (e.g. example.com)</label>
+    <input id="domain" placeholder="example.com" autocomplete="off">
+  </div>
+  <div class="field">
+    <label>GitHub org / company name (optional, e.g. example-corp)</label>
+    <input id="org" placeholder="example-corp" autocomplete="off">
+  </div>
+
+  <div class="cats" id="cats"></div>
+
+  <div class="actions">
+    <button class="primary" onclick="render()">Generate dorks</button>
+    <button class="ghost" onclick="copyAll()">Copy all queries</button>
+  </div>
+
+  <div id="output"></div>
+
+  <footer>This only builds and links out to public search engines — it doesn't run scans, bypass rate limits, or send requests on your behalf. Make sure the target is in scope before you dig further.</footer>
+</div>
+
+<script>
+const CATS = [
+  {id:'files', label:'Sensitive files (config/.env)', on:true},
+  {id:'keys', label:'Keys & credentials', on:true},
+  {id:'gitexp', label:'Exposed .git', on:true},
+  {id:'panels', label:'Admin/login panels', on:false},
+  {id:'errors', label:'SQL/PHP errors', on:false},
+  {id:'dash', label:'Dashboards (Jenkins etc.)', on:false},
+  {id:'ghcode', label:'GitHub code search', on:true},
+  {id:'leaks', label:'Pastebin/Trello/GitLab', on:false},
+  {id:'subs', label:'Subdomain discovery', on:false},
+];
+
+function buildCats(){
+  document.getElementById('cats').innerHTML = CATS.map(c => `
+    <label class="cat ${c.on?'active':''}" data-id="${c.id}">
+      <input type="checkbox" ${c.on?'checked':''} onchange="toggleCat(this,'${c.id}')">
+      ${c.label}
+    </label>`).join('');
+}
+function toggleCat(input, id){
+  const c = CATS.find(x=>x.id===id); c.on = input.checked;
+  input.closest('.cat').classList.toggle('active', input.checked);
+  render();
+}
+buildCats();
+
+function buildDorks(domain, org){
+  const d = domain || 'example.com';
+  const orgQ = org || 'target-org';
+  const g = {};
+
+  g.files = [
+    `org:${orgQ} filename:.env`,
+    `org:${orgQ} filename:config.json "password"`,
+    `org:${orgQ} filename:.pem`,
+    `org:${orgQ} filename:credentials.yml`,
+  ];
+  g.keys = [
+    `org:${orgQ} "AKIA" case:yes`,
+    `org:${orgQ} "BEGIN RSA PRIVATE KEY"`,
+    `org:${orgQ} "api_key" OR "apikey" OR "secret_key"`,
+    `org:${orgQ} "DB_PASSWORD" OR "DATABASE_URL"`,
+  ];
+  g.gitexp = [
+    `org:${orgQ} filename:.git-credentials`,
+    `org:${orgQ} filename:.netrc`,
+    `org:${orgQ} ".git/config" "url ="`,
+  ];
+  g.panels = [
+    `org:${orgQ} "admin" "password" filename:.env`,
+    `org:${orgQ} "wp-admin" "password"`,
+    `org:${orgQ} "${d}" "login" "password"`,
+  ];
+  g.errors = [
+    `org:${orgQ} "DEBUG = True"`,
+    `org:${orgQ} "APP_DEBUG=true"`,
+    `org:${orgQ} "display_errors" "On"`,
+  ];
+  g.dash = [
+    `org:${orgQ} filename:Jenkinsfile "password"`,
+    `org:${orgQ} filename:docker-compose.yml "traefik"`,
+    `org:${orgQ} "kibana" "password"`,
+  ];
+  g.leaks = [
+    `org:${orgQ} "pastebin.com"`,
+    `org:${orgQ} "trello.com/c/"`,
+    `"${d}" -org:${orgQ}`,
+  ];
+  g.subs = [
+    `org:${orgQ} "${d}" filename:hosts`,
+    `org:${orgQ} "${d}.internal"`,
+    `org:${orgQ} "${d}" language:YAML`,
+  ];
+  g.ghcode = [
+    `org:${orgQ} "${d}"`,
+    `org:${orgQ} "password" -filename:test`,
+    `org:${orgQ} type:commit message:"remove key"`,
+    `org:${orgQ} type:commit message:"oops"`,
+  ];
+
+  return g;
+}
+
+const LABELS = {
+  files:'Sensitive files', keys:'Keys & credentials', gitexp:'Leaked git credentials',
+  panels:'Admin/login panels', errors:'Debug/error configs', dash:'CI & dashboard configs',
+  ghcode:'General code search', leaks:'Pastebin/Trello mentions', subs:'Subdomain/endpoint discovery'
+};
+
+function githubUrl(q){ return 'https://github.com/search?type=code&q=' + encodeURIComponent(q); }
+// best-effort translation of GitHub-style query into Sourcegraph syntax
+function toSourcegraph(q, org){
+  let sq = q;
+  sq = sq.replace(new RegExp('-org:'+org, 'g'), `-repo:^github\\.com/${org}/`);
+  sq = sq.replace(new RegExp('org:'+org, 'g'), `repo:^github\\.com/${org}/`);
+  sq = sq.replace(/-filename:/g, '-file:');
+  sq = sq.replace(/filename:/g, 'file:');
+  return sq;
+}
+function sourcegraphUrl(q, org){
+  return 'https://sourcegraph.com/search?q=' + encodeURIComponent('context:global ' + toSourcegraph(q, org)) + '&patternType=standard';
+}
+
+let lastFlat = [];
+
+function render(){
+  const domain = document.getElementById('domain').value.trim();
+  const org = document.getElementById('org').value.trim() || 'target-org';
+  const dorks = buildDorks(domain, org);
+  const out = document.getElementById('output');
+  const active = CATS.filter(c=>c.on).map(c=>c.id);
+
+  if(!active.length){
+    out.innerHTML = '<div class="empty">Select at least one category</div>';
+    return;
+  }
+
+  lastFlat = [];
+  let html = '';
+  active.forEach(id=>{
+    const list = dorks[id] || [];
+    html += `<div class="group"><h2>${LABELS[id]}</h2>` + list.map(q=>{
+      lastFlat.push(q);
+      const esc = q.replace(/</g,'&lt;');
+      const links = `<a class="linkbtn github" href="${githubUrl(q)}" target="_blank" rel="noopener">Run on GitHub</a>
+           <a class="linkbtn sg" href="${sourcegraphUrl(q, org)}" target="_blank" rel="noopener">Run on Sourcegraph</a>`;
+      return `<div class="dork-row">
+        <code>${esc}</code>
+        <div class="row-btns">
+          ${links}
+          <button class="copybtn" onclick="copyOne(this,'${q.replace(/'/g,"\\'")}')">Copy</button>
+        </div>
+      </div>`;
+    }).join('') + `</div>`;
+  });
+  out.innerHTML = html;
+}
+
+// live updates: re-render as soon as inputs or category toggles change
+document.getElementById('domain').addEventListener('input', render);
+document.getElementById('org').addEventListener('input', render);
+
+async function copyOne(btn, text){
+  try{
+    await navigator.clipboard.writeText(text);
+    btn.textContent = 'Copied ✓'; btn.classList.add('done');
+    setTimeout(()=>{btn.textContent='Copy'; btn.classList.remove('done');}, 1200);
+  }catch(e){ btn.textContent = 'Error'; }
+}
+async function copyAll(){
+  if(!lastFlat.length){ render(); }
+  try{
+    await navigator.clipboard.writeText(lastFlat.join('\n'));
+    alert('Copied ' + lastFlat.length + ' queries to clipboard');
+  }catch(e){ alert('Clipboard copy not supported here'); }
+}
+
+render();
+</script>
+</body>
+</html>
